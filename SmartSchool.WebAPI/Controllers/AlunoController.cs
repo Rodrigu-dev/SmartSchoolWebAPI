@@ -1,6 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SmartSchool.WebAPI.Data;
 using SmartSchool.WebAPI.Models;
 
 namespace SmartSchool.WebAPI.Controllers
@@ -9,49 +13,34 @@ namespace SmartSchool.WebAPI.Controllers
     [Route("api/[controller]")]
     public class AlunoController : ControllerBase
     {
-        public List<Aluno> Alunos = new List<Aluno>()
-        {
-            new Aluno(){
-                Id = 1,
-                Nome = "Marcos",
-                SobreNome = "Almeida",
-                Telefone = "123456"
-            },
-            new Aluno(){
-                Id = 2,
-                Nome = "Marta",
-                SobreNome = "Kent",
-                Telefone = "858522245"
-            },
-            new Aluno(){
-                Id = 3,
-                Nome = "Laura",
-                SobreNome = "Maria",
-                Telefone = "4561598"
-            }
-        };
+        private readonly SmartContext _context;
 
-        public AlunoController() { }
+        public AlunoController(SmartContext context)
+        {
+            _context = context;
+        }
+
 
         [HttpGet]
-        public IActionResult Get()
+        public ActionResult Get()
         {
-            return Ok(Alunos);
+            return Ok(_context.Alunos);
         }
         
+        //api/byId/id
         [HttpGet("byId/{id}")]
-        public IActionResult GetById(int id)
+        public ActionResult GetById(int id)
         {
-            var aluno = Alunos.FirstOrDefault(a => a.Id == id);
+            var aluno = _context.Alunos.FirstOrDefault(a => a.Id == id);
             if (aluno == null) return BadRequest("Aluno não encontrado");
             return Ok(aluno);   
 
         }
 
-        [HttpGet("byNome")]
-        public IActionResult GetByName(string nome, string SobreNome)
+        [HttpGet("byName")]
+        public ActionResult GetByName(string nome, string SobreNome)
         {
-            var aluno = Alunos.FirstOrDefault(a => 
+            var aluno = _context.Alunos.FirstOrDefault(a => 
             a.Nome.Contains(nome) && a.SobreNome.Contains(SobreNome)
             );
             if (aluno == null) return BadRequest("Aluno não encontrado");
@@ -60,30 +49,82 @@ namespace SmartSchool.WebAPI.Controllers
         }
 
         [HttpPost]
-        public IActionResult Post(Aluno aluno)
+        public ActionResult Post(Aluno aluno)
         {
-            return Ok(aluno);
+            try
+            {
+                _context.Add(aluno);        // Adiciona na Memória
+                _context.SaveChanges();     // Inclui os dados no Banco de dados
+                return Ok(aluno);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                "Erro ao tentar criar uma novo Aluno");
+                
+            }
+            
 
         }
         
         [HttpPut("{id}")]
-        public IActionResult Put(int id, Aluno aluno)
+        public ActionResult Put(int id, [FromBody] Aluno aluno)
         {
-            return Ok(aluno);
+           try
+           {
+               var verAluno = _context.Alunos.AsNoTracking().FirstOrDefault(a => a.Id == id);
+                if (verAluno == null)
+                {
+                     return BadRequest($"Aluno com id={id} não foi encontrada");
+                }
+                 _context.Update(aluno);    
+                 _context.SaveChanges();     
+                 return Ok(aluno);
+           }
+           catch (Exception)
+           {
+               
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                $"Erro ao tentar atualizar o Aluno com id={id}");
+           }
 
         }
 
         [HttpPatch("{id}")]
-        public IActionResult Petch(int id, Aluno aluno)
+        public IActionResult Patch(int id, Aluno aluno)
         {
+            var verAluno = _context.Alunos.AsNoTracking().FirstOrDefault(a => a.Id == id);
+                if (verAluno == null)
+                {
+                     return BadRequest($"Aluno com id={id} não foi encontrada");
+                }
+            _context.Update(aluno); 
+            _context.SaveChanges();     
             return Ok(aluno);
 
         }
 
-         [HttpDelete("{id}")]
-        public IActionResult Put(int id)
+        [HttpDelete("{id}")]
+        public ActionResult<Aluno> Delete(int id)
         {
-            return Ok();
+            try
+            {
+                var aluno = _context.Alunos.FirstOrDefault(a => a.Id == id);
+                if (aluno == null)
+                {
+                     return BadRequest($"Aluno com id={id} não foi encontrada");
+                }
+                _context.Remove(aluno);
+                _context.SaveChanges();
+                return aluno;
+            }
+            catch (Exception)
+            {
+                
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                $"Erro ao tentar excluir Aluno de id={id}");
+            }
+            
 
         }
 
