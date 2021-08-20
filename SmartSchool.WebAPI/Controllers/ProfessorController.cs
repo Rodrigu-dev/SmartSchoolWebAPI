@@ -1,8 +1,6 @@
 using System;
-using System.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using SmartSchool.WebAPI.Data;
 using SmartSchool.WebAPI.Models;
 
@@ -12,32 +10,27 @@ namespace SmartSchool.WebAPI.Controllers
     [Route("api/[controller]")]
     public class ProfessorController : ControllerBase
     {
-        private readonly SmartContext _context;
-        public ProfessorController(SmartContext context) { 
-            _context = context;
+
+        private readonly IRepository _repo;
+
+        public ProfessorController(IRepository repo)
+        {
+            _repo = repo;
         }
-         //api/professsor
+
+        //api/professsor
         [HttpGet]
-        public ActionResult Get()
+        public IActionResult Get()
         {
-            return Ok(_context.Professores);
+            var result = _repo.GetAllProfessores(true);
+            return Ok(result);
         }
 
-         //api/professor/byId/id
-        [HttpGet("byId/{id}")]
-        public ActionResult GetById(int id)
+         //api/professor/1
+        [HttpGet("{id}")]
+        public IActionResult GetById(int id)
         {
-            var professor = _context.Professores.FirstOrDefault(a => a.Id == id);
-            if (professor == null) return BadRequest("Professor não encontrado");
-            return Ok(professor);   
-
-        }
-
-        //api/professor/byName?nome=nome
-        [HttpGet("byName")]
-        public ActionResult GetByName(string name)
-        {
-            var professor = _context.Professores.FirstOrDefault(a => a.Nome.Contains(name));
+            var professor = _repo.GetProfessorById(id, false);
             if (professor == null) return BadRequest("Professor não encontrado");
             return Ok(professor);   
 
@@ -45,13 +38,17 @@ namespace SmartSchool.WebAPI.Controllers
 
         //api/professor
         [HttpPost]
-        public ActionResult Post(Professor professor)
+        public IActionResult Post(Professor professor)
         {
-            try
+             try
             {
-                _context.Add(professor);        // Adiciona na Memória
-                _context.SaveChanges();     // Inclui os dados no Banco de dados
-                return Ok(professor);
+                _repo.Add(professor);
+                if(_repo.SaveChanges())
+                {
+                    return Ok(professor);
+                }
+
+                return BadRequest("Professor não cadastrado");
             }
             catch (Exception)
             {
@@ -62,18 +59,21 @@ namespace SmartSchool.WebAPI.Controllers
 
         //api/professor
         [HttpPut("{id}")]
-        public ActionResult Put(int id, Professor professor)
+        public IActionResult Put(int id, [FromBody] Professor professor)
         {
            try
            {
-               var verProf = _context.Professores.AsNoTracking().FirstOrDefault(a => a.Id == id);
+               var verProf = _repo.GetProfessorById(id, false);
                 if (verProf == null)
                 {
-                     return BadRequest($"Professor com id={id} não foi encontrada");
+                     return NotFound($"Professor com id={id} não foi encontrada");
                 }
-                 _context.Update(professor);    
-                 _context.SaveChanges();     
-                 return Ok(professor);
+                 _repo.Update(professor);
+                if(_repo.SaveChanges())
+                {
+                   return Ok(professor);
+                }    
+                return BadRequest("Professor não Atualizado");  
            }
            catch (Exception)
            {
@@ -86,15 +86,17 @@ namespace SmartSchool.WebAPI.Controllers
          [HttpPatch("{id}")]
         public IActionResult Patch(int id, Professor professor)
         {
-            var verProf = _context.Professores.AsNoTracking().FirstOrDefault(a => a.Id == id);
-                if (verProf == null)
-                {
-                     return BadRequest($"Professor com id={id} não foi encontrada");
-                }
-            _context.Update(professor); 
-            _context.SaveChanges();     
-            return Ok(professor);
-
+            var verProf = _repo.GetProfessorById(id, false);
+            if (verProf == null)
+            {
+                return NotFound($"Professor com id={id} não foi encontrada");
+            }
+            _repo.Update(professor); 
+            if (_repo.SaveChanges())
+            {
+                return Ok(professor);
+            }
+            return BadRequest("Professor não Atualizado");
         }
 
         [HttpDelete("{id}")]
@@ -102,27 +104,25 @@ namespace SmartSchool.WebAPI.Controllers
         {
             try
             {
-                var professor = _context.Professores.FirstOrDefault(a => a.Id == id);
+                var professor = _repo.GetProfessorById(id);
                 if (professor == null)
                 {
-                     return BadRequest($"Professor com id={id} não foi encontrada");
+                    return NotFound($"Professor com id={id} não foi encontrada");
                 }
-                _context.Remove(professor);
-                _context.SaveChanges();
-                return professor;
+                _repo.Remove(professor);
+                if (_repo.SaveChanges())
+                {
+                    return Ok("Professor Deletado");
+                }
+                return BadRequest("Professor não deletado");
             }
             catch (Exception)
             {
-                
                 return StatusCode(StatusCodes.Status500InternalServerError, 
                 $"Erro ao tentar excluir Professor de id={id}");
             }
             
-
         }
-
-
-
-       
+      
     }
 }

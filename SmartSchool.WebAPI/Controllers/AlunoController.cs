@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using SmartSchool.WebAPI.Data;
 using SmartSchool.WebAPI.Models;
 
@@ -13,73 +10,70 @@ namespace SmartSchool.WebAPI.Controllers
     [Route("api/[controller]")]
     public class AlunoController : ControllerBase
     {
-        private readonly SmartContext _context;
+        private readonly IRepository _repo;
 
-        public AlunoController(SmartContext context)
+        public AlunoController(IRepository repo)
         {
-            _context = context;
+            _repo = repo;
         }
 
-
+        //api/aluno
         [HttpGet]
-        public ActionResult Get()
+        public IActionResult Get()
         {
-            return Ok(_context.Alunos);
+            var result = _repo.GetAllAlunos(true);
+            return Ok(result);
         }
         
-        //api/byId/id
-        [HttpGet("byId/{id}")]
-        public ActionResult GetById(int id)
+        //api/aluno/1
+        [HttpGet("{id}")]
+        public IActionResult GetById(int id)
         {
-            var aluno = _context.Alunos.FirstOrDefault(a => a.Id == id);
+            var aluno = _repo.GetAlunoById(id, false);
             if (aluno == null) return BadRequest("Aluno não encontrado");
             return Ok(aluno);   
 
         }
 
-        [HttpGet("byName")]
-        public ActionResult GetByName(string nome, string SobreNome)
-        {
-            var aluno = _context.Alunos.FirstOrDefault(a => 
-            a.Nome.Contains(nome) && a.SobreNome.Contains(SobreNome)
-            );
-            if (aluno == null) return BadRequest("Aluno não encontrado");
-            return Ok(aluno);   
-
-        }
-
+        //api/aluno
         [HttpPost]
-        public ActionResult Post(Aluno aluno)
+        public IActionResult Post(Aluno aluno)
         {
             try
             {
-                _context.Add(aluno);        // Adiciona na Memória
-                _context.SaveChanges();     // Inclui os dados no Banco de dados
-                return Ok(aluno);
+                _repo.Add(aluno);
+                if(_repo.SaveChanges())
+                {
+                    return Ok(aluno);
+                }
+
+                return BadRequest("Aluno não cadastrado");
             }
             catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError,
                 "Erro ao tentar criar uma novo Aluno");
-                
             }
-            
 
         }
         
+        //api/aluno
         [HttpPut("{id}")]
-        public ActionResult Put(int id, [FromBody] Aluno aluno)
+        public IActionResult Put(int id, [FromBody] Aluno aluno)
         {
            try
            {
-               var verAluno = _context.Alunos.AsNoTracking().FirstOrDefault(a => a.Id == id);
+               var verAluno = _repo.GetAlunoById(id);
                 if (verAluno == null)
                 {
-                     return BadRequest($"Aluno com id={id} não foi encontrada");
+                     return NotFound($"Aluno com id={id} não foi encontrada");
                 }
-                 _context.Update(aluno);    
-                 _context.SaveChanges();     
-                 return Ok(aluno);
+                _repo.Update(aluno);
+                if(_repo.SaveChanges())
+                {
+                    return Ok(aluno);
+                }
+                return BadRequest("Aluno não Atualizado");
            }
            catch (Exception)
            {
@@ -93,15 +87,17 @@ namespace SmartSchool.WebAPI.Controllers
         [HttpPatch("{id}")]
         public IActionResult Patch(int id, Aluno aluno)
         {
-            var verAluno = _context.Alunos.AsNoTracking().FirstOrDefault(a => a.Id == id);
-                if (verAluno == null)
-                {
-                     return BadRequest($"Aluno com id={id} não foi encontrada");
-                }
-            _context.Update(aluno); 
-            _context.SaveChanges();     
-            return Ok(aluno);
-
+            var verAluno = _repo.GetAlunoById(id);
+            if (verAluno == null)
+            {
+                return NotFound($"Aluno com id={id} não foi encontrada");
+            }
+            _repo.Update(aluno);
+            if(_repo.SaveChanges())
+            {
+                return Ok(aluno);
+            }
+            return BadRequest("Aluno não Atualizado");
         }
 
         [HttpDelete("{id}")]
@@ -109,23 +105,24 @@ namespace SmartSchool.WebAPI.Controllers
         {
             try
             {
-                var aluno = _context.Alunos.FirstOrDefault(a => a.Id == id);
+                var aluno = _repo.GetAlunoById(id);
                 if (aluno == null)
                 {
-                     return BadRequest($"Aluno com id={id} não foi encontrada");
+                    return NotFound($"Aluno com id={id} não foi encontrada");
                 }
-                _context.Remove(aluno);
-                _context.SaveChanges();
-                return aluno;
+                _repo.Remove(aluno);
+                if(_repo.SaveChanges())
+                {
+                    return Ok("Aluno deletado");
+                }
+                return BadRequest("Aluno não deletado");
             }
             catch (Exception)
             {
-                
                 return StatusCode(StatusCodes.Status500InternalServerError,
                 $"Erro ao tentar excluir Aluno de id={id}");
             }
-            
-
+          
         }
 
     }
