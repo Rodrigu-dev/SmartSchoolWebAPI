@@ -22,11 +22,11 @@ namespace SmartSchool.WebAPI.Controllers
         [HttpGet]
         public IActionResult Get()
         {
-            var result = _repo.GetAllProfessores(true);
-            return Ok(result);
+            var professor = _repo.GetAllProfessores(true);
+            return Ok(professor);
         }
 
-         //api/professor/1
+         //api/professor/
         [HttpGet("{id}")]
         public IActionResult GetById(int id)
         {
@@ -57,7 +57,7 @@ namespace SmartSchool.WebAPI.Controllers
             }
         }
 
-        //api/professor
+        //api/professor/
         [HttpPut("{id}")]
         public IActionResult Put(int id, [FromBody] Professor professor)
         {
@@ -83,7 +83,8 @@ namespace SmartSchool.WebAPI.Controllers
 
         }
 
-         [HttpPatch("{id}")]
+        //api/professor/
+        [HttpPatch("{id}")]
         public IActionResult Patch(int id, Professor professor)
         {
             var verProf = _repo.GetProfessorById(id, false);
@@ -99,8 +100,9 @@ namespace SmartSchool.WebAPI.Controllers
             return BadRequest("Professor não Atualizado");
         }
 
+        //api/professor/
         [HttpDelete("{id}")]
-        public ActionResult<Professor> Delete(int id)
+        public IActionResult Delete(int id)
         {
             try
             {
