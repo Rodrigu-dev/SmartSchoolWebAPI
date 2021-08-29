@@ -20,7 +20,8 @@ namespace SmartSchool.WebAPI.Data
         
 
         
-        
+        //Definição do Relacionamento N para N
+        //Dados para carga inicial e testes
        protected override void OnModelCreating(ModelBuilder builder)
        {
            //Definição do Relacionamento N para N

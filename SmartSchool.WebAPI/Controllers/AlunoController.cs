@@ -82,6 +82,7 @@ namespace SmartSchool.WebAPI.Controllers
                 _mapper.Map(model, aluno);
 
                 _repo.Update(aluno);
+                
                 if(_repo.SaveChanges())
                 {
                      return Created($"/api/aluno/{model.Id}", _mapper.Map<AlunoDto>(aluno));
