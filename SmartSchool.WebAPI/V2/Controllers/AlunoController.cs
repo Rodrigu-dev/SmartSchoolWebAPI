@@ -4,33 +4,48 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SmartSchool.WebAPI.Data;
-using SmartSchool.WebAPI.Dtos;
 using SmartSchool.WebAPI.Models;
+using SmartSchool.WebAPI.V1.Dtos;
 
-namespace SmartSchool.WebAPI.Controllers
+namespace SmartSchool.WebAPI.V2.Controllers
 {
+    /// <summary>
+    /// Versão 2 do meu Controlador de Alunos
+    /// </summary>
     [ApiController]
-    [Route("api/[controller]")]
+    [ApiVersion("2.0")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     public class AlunoController : ControllerBase
     {
         private readonly IRepository _repo;
         private readonly IMapper _mapper;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="repo"></param>
+        /// <param name="mapper"></param>
         public AlunoController(IRepository repo, IMapper mapper)
         {
             _repo = repo;
             _mapper = mapper;
         }
 
-        //api/aluno
+        /// <summary>
+        /// Método responsável por retornar todos os Alunos
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
         public IActionResult Get()
         {
             var alunos = _repo.GetAllAlunos(true);
             return Ok(_mapper.Map<IEnumerable<AlunoDto>>(alunos));
         }
-        
-        //api/aluno/
+
+        /// <summary>
+        /// Método responsável por retornar apenas um único Aluno por meio do Código ID
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("{id}")]
         public IActionResult GetById(int id)
         {
@@ -98,25 +113,7 @@ namespace SmartSchool.WebAPI.Controllers
 
         }
 
-        //api/aluno/
-        [HttpPatch("{id}")]
-        public IActionResult Patch(int id, AlunoRegistrarDto model)
-        {
-            var aluno = _repo.GetAlunoById(id);
-            if (aluno == null)
-            {
-                return NotFound($"Aluno com id={id} não foi encontrada");
-            }
-
-            _mapper.Map(model, aluno);
-
-            _repo.Update(aluno);
-            if(_repo.SaveChanges())
-            {
-                 return Created($"/api/aluno/{model.Id}", _mapper.Map<AlunoDto>(aluno));
-            }
-            return BadRequest("Aluno não Atualizado");
-        }
+       
 
         //api/aluno/
         [HttpDelete("{id}")]

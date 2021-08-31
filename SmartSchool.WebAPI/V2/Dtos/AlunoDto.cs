@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 
-namespace SmartSchool.WebAPI.Dtos
+namespace SmartSchool.WebAPI.V2.Dtos
 {
+    /// <summary>
+    /// Este � DTO de Alunos para Registro.
+    /// </summary>
     public class AlunoDto
     {
         public int Id { get; set; }

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using SmartSchool.WebAPI.Models;
 
-namespace SmartSchool.WebAPI.Dtos
+namespace SmartSchool.WebAPI.V1.Dtos
 {
     public class AlunoRegistrarDto
     {
